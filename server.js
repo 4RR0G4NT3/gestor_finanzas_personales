@@ -127,8 +127,18 @@ async function handlePostFinances(req, res) {
 }
 
 function serveStaticFile(req, res) {
-  let filePath = path.join(PUBLIC_DIR, req.url === '/' ? 'index.html' : req.url);
+  // Normalizar la URL para quitar parámetros de búsqueda si los hay
+  const urlPath = req.url.split('?')[0];
+  
+  // Construir la ruta al archivo
+  let filePath = path.join(PUBLIC_DIR, urlPath === '/' ? 'index.html' : urlPath);
   let extname = String(path.extname(filePath)).toLowerCase();
+  
+  // Si no hay extensión y no es la raíz, intentamos añadir .html (soporte para URLs limpias)
+  if (!extname && urlPath !== '/') {
+    filePath += '.html';
+    extname = '.html';
+  }
   
   let contentType = MIME_TYPES[extname] || 'application/octet-stream';
 
