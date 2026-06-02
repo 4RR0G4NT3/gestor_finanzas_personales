@@ -1,10 +1,34 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { MongoClient } = require('mongodb');
+
+// Cargar variables de entorno desde un archivo .env en entorno local (desarrollo)
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
 
 const PORT = process.env.PORT || 3000;
-const DATA_FILE = path.join(__dirname, 'data', 'data.json');
 const PUBLIC_DIR = path.join(__dirname, 'public');
+
+// URL de conexión a MongoDB.
+// Toma el valor del archivo .env (local) o de las variables de entorno de Render (producción).
+// Si no hay ninguno, intenta conectarse de forma local por defecto.
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/gestor_finanzas';
+const DB_NAME = 'gestor_finanzas';
+const COLLECTION_NAME = 'datos_usuario';
+
+let db;
+
+// Inicializar la conexión a MongoDB
+MongoClient.connect(MONGODB_URI)
+  .then(client => {
+    console.log('Conectado exitosamente a MongoDB');
+    db = client.db(DB_NAME);
+  })
+  .catch(err => {
+    console.error('Error al conectar a MongoDB:', err);
+  });
 
 // MIME types para los archivos estáticos
 const MIME_TYPES = {
@@ -37,60 +61,72 @@ const server = http.createServer((req, res) => {
   serveStaticFile(req, res);
 });
 
-function handleGetFinances(req, res) {
-  fs.readFile(DATA_FILE, 'utf8', (err, data) => {
-    if (err) {
-      if (err.code === 'ENOENT') {
-        // Si el archivo no existe, devolver un objeto vacío
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({}));
-      } else {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Error reading data file' }));
-      }
-      return;
-    }
+async function handleGetFinances(req, res) {
+  if (!db) {
+    res.writeHead(503, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ error: 'Base de datos no disponible' }));
+  }
+
+  try {
+    const collection = db.collection(COLLECTION_NAME);
+    // Buscamos el único registro de finanzas (usamos un identificador fijo para el usuario actual)
+    const data = await collection.findOne({ userId: 'default_user' });
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(data || '{}');
-  });
+    res.end(JSON.stringify(data || {}));
+  } catch (err) {
+    console.error('Error obteniendo datos:', err);
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Error leyendo datos de la base de datos' }));
+  }
 }
 
-function handlePostFinances(req, res) {
+async function handlePostFinances(req, res) {
+  if (!db) {
+    res.writeHead(503, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ error: 'Base de datos no disponible' }));
+  }
+
   let body = '';
   req.on('data', chunk => {
     body += chunk.toString();
   });
 
-  req.on('end', () => {
+  req.on('end', async () => {
     try {
       const parsedData = JSON.parse(body);
       
-      // Validación básica (la validación compleja se hace en el frontend)
+      // Validación básica
       if (!parsedData.income || !parsedData.period || !parsedData.categories) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Missing required fields' }));
-        return;
+        return res.end(JSON.stringify({ error: 'Faltan campos requeridos' }));
       }
 
-      fs.writeFile(DATA_FILE, JSON.stringify(parsedData, null, 2), (err) => {
-        if (err) {
-          res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Error saving data' }));
-          return;
-        }
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ message: 'Data saved successfully' }));
-      });
+      const collection = db.collection(COLLECTION_NAME);
+      
+      // Upsert: Si existe el documento para 'default_user', lo actualiza. Si no, lo crea.
+      await collection.updateOne(
+        { userId: 'default_user' },
+        { $set: { 
+            income: parsedData.income, 
+            period: parsedData.period, 
+            categories: parsedData.categories 
+          } 
+        },
+        { upsert: true }
+      );
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ message: 'Datos guardados exitosamente en MongoDB' }));
     } catch (e) {
+      console.error('Error guardando datos:', e);
       res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Invalid JSON' }));
+      res.end(JSON.stringify({ error: 'JSON inválido o error de base de datos' }));
     }
   });
 }
 
 function serveStaticFile(req, res) {
-  // Construir la ruta al archivo
   let filePath = path.join(PUBLIC_DIR, req.url === '/' ? 'index.html' : req.url);
   let extname = String(path.extname(filePath)).toLowerCase();
   
