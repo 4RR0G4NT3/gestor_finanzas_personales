@@ -1,41 +1,40 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Referencias a elementos del DOM
     const incomeInput = document.getElementById('income');
     const periodSelect = document.getElementById('period');
     const addCategoryBtn = document.getElementById('add-category-btn');
     const categoriesContainer = document.getElementById('categories-container');
     const template = document.getElementById('category-template');
-    
-    const summaryIncome = document.getElementById('summary-income');
-    const summaryAssigned = document.getElementById('summary-assigned');
-    const summaryRemaining = document.getElementById('summary-remaining');
-    
     const saveBtn = document.getElementById('save-btn');
     const validationMessage = document.getElementById('validation-message');
 
-    // Estado de la aplicación
     let currentIncome = 0;
 
-    // Inicialización
     init();
 
-    function init() {
-        // Cargar datos existentes si los hay
-        fetchData();
+    function formatInputNumber(e) {
+        let val = e.target.value.replace(/[^0-9.]/g, '');
+        const parts = val.split('.');
+        if (parts.length > 2) parts.pop();
+        if (parts[0]) {
+            parts[0] = parseInt(parts[0], 10).toLocaleString('en-US');
+        }
+        e.target.value = parts.join('.');
+    }
 
-        // Event Listeners
+    function init() {
+        fetchData();
+        incomeInput.addEventListener('input', formatInputNumber);
         incomeInput.addEventListener('input', handleIncomeChange);
-        addCategoryBtn.addEventListener('click', addCategoryRow);
+        addCategoryBtn.addEventListener('click', () => addCategoryRow());
         saveBtn.addEventListener('click', saveData);
 
-        // Añadir una categoría inicial por defecto si el contenedor está vacío
         if (categoriesContainer.children.length === 0) {
             addCategoryRow();
         }
     }
 
     function handleIncomeChange() {
-        currentIncome = parseFloat(incomeInput.value) || 0;
+        currentIncome = parseFloat(incomeInput.value.replace(/,/g, '')) || 0;
         updateSummary();
     }
 
@@ -48,15 +47,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const valueInput = categoryItem.querySelector('.cat-value');
         const removeBtn = categoryItem.querySelector('.btn-remove-cat');
 
-        // Si se proveen datos, rellenar los campos
         if (categoryData) {
             nameInput.value = categoryData.name;
             typeSelect.value = categoryData.type;
-            valueInput.value = categoryData.value;
+            
+            let valStr = categoryData.value.toString();
+            const parts = valStr.split('.');
+            parts[0] = parseInt(parts[0], 10).toLocaleString('en-US');
+            valueInput.value = parts.join('.');
         }
 
-        // Listeners para los inputs de esta fila
         typeSelect.addEventListener('change', updateSummary);
+        valueInput.addEventListener('input', formatInputNumber);
         valueInput.addEventListener('input', updateSummary);
         
         removeBtn.addEventListener('click', () => {
@@ -74,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         rows.forEach(row => {
             const type = row.querySelector('.cat-type').value;
-            const value = parseFloat(row.querySelector('.cat-value').value) || 0;
+            const value = parseFloat(row.querySelector('.cat-value').value.replace(/,/g, '')) || 0;
             const calcSpan = row.querySelector('.cat-calculated-amount');
 
             let calculatedAmount = 0;
@@ -90,21 +92,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const remaining = currentIncome - totalAssigned;
-
-        // Actualizar UI
-        summaryIncome.textContent = formatCurrency(currentIncome);
-        summaryAssigned.textContent = formatCurrency(totalAssigned);
-        summaryRemaining.textContent = formatCurrency(remaining);
-
-        // Estilos para el restante
-        if (remaining < 0) {
-            summaryRemaining.className = 'negative';
-        } else if (remaining === 0 && currentIncome > 0) {
-            summaryRemaining.className = 'positive';
-        } else {
-            summaryRemaining.className = '';
-        }
-
         validateForm(remaining, totalAssigned);
     }
 
@@ -125,7 +112,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Tolerancia para errores de redondeo de punto flotante
         if (Math.abs(remaining) > 0.01) {
             if (remaining > 0) {
                 validationMessage.textContent = `Aún falta asignar ${formatCurrency(remaining)} (o el equivalente en %).`;
@@ -142,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function formatCurrency(amount) {
-        return '$' + amount.toFixed(2);
+        return '$' + amount.toLocaleString('en-US', { maximumFractionDigits: 0 });
     }
 
     function getFormData() {
@@ -152,7 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
         rows.forEach(row => {
             const name = row.querySelector('.cat-name').value;
             const type = row.querySelector('.cat-type').value;
-            const value = parseFloat(row.querySelector('.cat-value').value) || 0;
+            const value = parseFloat(row.querySelector('.cat-value').value.replace(/,/g, '')) || 0;
 
             if (name.trim() !== '') {
                 categories.push({ name, type, value });
@@ -174,9 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         fetch('/api/finances', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         })
         .then(response => {
@@ -184,17 +168,15 @@ document.addEventListener('DOMContentLoaded', () => {
             return response.json();
         })
         .then(result => {
-            validationMessage.textContent = '¡Datos guardados exitosamente!';
+            validationMessage.textContent = '¡Datos guardados exitosamente! Redirigiendo a visualización...';
             validationMessage.className = 'validation-message validation-success';
             setTimeout(() => {
-                updateSummary(); // Resetear mensaje
-            }, 3000);
+                window.location.href = 'visualizacion.html';
+            }, 1000);
         })
         .catch(error => {
             validationMessage.textContent = 'Error al guardar los datos.';
             validationMessage.className = 'validation-message validation-error';
-        })
-        .finally(() => {
             saveBtn.textContent = 'Guardar Distribución';
             saveBtn.disabled = false;
         });
@@ -205,14 +187,17 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(response => response.json())
             .then(data => {
                 if (data.income) {
-                    incomeInput.value = data.income;
+                    let incStr = data.income.toString();
+                    const parts = incStr.split('.');
+                    parts[0] = parseInt(parts[0], 10).toLocaleString('en-US');
+                    incomeInput.value = parts.join('.');
                     currentIncome = data.income;
                 }
                 if (data.period) {
                     periodSelect.value = data.period;
                 }
                 if (data.categories && data.categories.length > 0) {
-                    categoriesContainer.innerHTML = ''; // Limpiar categorías por defecto
+                    categoriesContainer.innerHTML = '';
                     data.categories.forEach(cat => addCategoryRow(cat));
                 }
                 updateSummary();

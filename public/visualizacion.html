@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualización - Gestor de Finanzas</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h2>Finanzas</h2>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="index.html">Distribución</a>
+            <a href="visualizacion.html" class="active">Visualización</a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <div class="container">
+            <header>
+                <h1>Resumen de Finanzas</h1>
+                <p id="period-display">Cargando...</p>
+            </header>
+
+            <section class="summary-section">
+                <div class="summary-card">
+                    <h3>Ingreso Total</h3>
+                    <p id="vis-income">$0</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Asignado</h3>
+                    <p id="vis-assigned">$0</p>
+                </div>
+            </section>
+
+            <section>
+                <h2>Detalle de Categorías</h2>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Categoría</th>
+                                <th>Porcentaje</th>
+                                <th>Monto</th>
+                                <th>Cumplido</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vis-categories">
+                            <!-- Filas insertadas dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="final-message" style="margin-top: 1.5rem; text-align: center; font-weight: bold; font-size: 1.2rem;"></div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Modal para Excedente -->
+    <div id="excess-modal" class="modal">
+        <div class="modal-content">
+            <h3>Registrar Excedente</h3>
+            <p>¿De cuánto fue el excedente en esta categoría?</p>
+            <div class="form-group">
+                <input type="text" id="excess-amount" placeholder="Ej. 500">
+            </div>
+            <div class="modal-actions">
+                <button id="modal-cancel" class="btn btn-secondary">Cancelar</button>
+                <button id="modal-accept" class="btn btn-primary">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="visualizacion.js"></script>
+</body>
+</html>
