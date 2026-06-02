@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
         rows.forEach(row => {
             const type = row.querySelector('.cat-type').value;
             const value = parseFloat(row.querySelector('.cat-value').value.replace(/,/g, '')) || 0;
-            const calcSpan = row.querySelector('.cat-calculated-amount');
+            const calcInput = row.querySelector('.cat-calculated-amount');
 
             let calculatedAmount = 0;
 
@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 calculatedAmount = value;
             }
 
-            calcSpan.textContent = formatCurrency(calculatedAmount);
+            calcInput.value = formatCurrency(calculatedAmount);
             totalAssigned += calculatedAmount;
         });
 
