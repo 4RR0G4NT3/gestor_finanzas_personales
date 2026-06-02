@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Finanzas Personales</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Gestor de Finanzas</h1>
+            <p>Distribuye tus ingresos de forma inteligente</p>
+        </header>
+
+        <main>
+            <section class="config-section">
+                <h2>Configuración General</h2>
+                <div class="form-group">
+                    <label for="period">Periodo de Gestión:</label>
+                    <select id="period" name="period">
+                        <option value="semanal">Semanal</option>
+                        <option value="quincenal">Quincenal</option>
+                        <option value="mensual" selected>Mensual</option>
+                        <option value="otro">Otro</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="income">Ingreso Total ($):</label>
+                    <input type="number" id="income" name="income" min="1" step="any" placeholder="Ej. 1000" required>
+                </div>
+            </section>
+
+            <section class="summary-section">
+                <div class="summary-card">
+                    <h3>Ingreso</h3>
+                    <p id="summary-income">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Asignado</h3>
+                    <p id="summary-assigned">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Restante</h3>
+                    <p id="summary-remaining" class="positive">$0.00</p>
+                </div>
+            </section>
+
+            <section class="categories-section">
+                <div class="categories-header">
+                    <h2>Categorías de Gastos</h2>
+                    <button id="add-category-btn" class="btn btn-secondary">+ Añadir Categoría</button>
+                </div>
+                
+                <div id="categories-container">
+                    <!-- Las categorías se insertarán aquí dinámicamente -->
+                </div>
+            </section>
+
+            <div class="actions-section">
+                <div id="validation-message" class="validation-message"></div>
+                <button id="save-btn" class="btn btn-primary" disabled>Guardar Distribución</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Plantilla para una nueva categoría (oculta) -->
+    <template id="category-template">
+        <div class="category-item">
+            <div class="form-group category-name-group">
+                <input type="text" class="cat-name" placeholder="Nombre (ej. Arriendo)" required>
+            </div>
+            <div class="form-group category-type-group">
+                <select class="cat-type">
+                    <option value="percentage">Porcentaje (%)</option>
+                    <option value="fixed">Monto Fijo ($)</option>
+                </select>
+            </div>
+            <div class="form-group category-value-group">
+                <input type="number" class="cat-value" min="0" step="any" placeholder="Valor" required>
+            </div>
+            <div class="category-calculated">
+                <span class="cat-calculated-amount">$0.00</span>
+            </div>
+            <button type="button" class="btn-remove-cat" title="Eliminar categoría">✕</button>
+        </div>
+    </template>
+
+    <script src="app.js"></script>
+</body>
+</html>

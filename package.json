@@ -1,0 +1,11 @@
+{
+  "name": "gestor-finanzas-personales",
+  "version": "1.0.0",
+  "description": "Un gestor de finanzas personales en Node.js puro",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "ISC"
+}

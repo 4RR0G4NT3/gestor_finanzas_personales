@@ -1,0 +1,21 @@
+{
+  "period": "mensual",
+  "income": 4000000,
+  "categories": [
+    {
+      "name": "Arriendo",
+      "type": "percentage",
+      "value": 10
+    },
+    {
+      "name": "Comida",
+      "type": "percentage",
+      "value": 10
+    },
+    {
+      "name": "ahorro",
+      "type": "percentage",
+      "value": 80
+    }
+  ]
+}
